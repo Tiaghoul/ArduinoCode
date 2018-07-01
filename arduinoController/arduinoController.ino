@@ -93,11 +93,7 @@ void sendArduinoPubKey(){
 void dealWithSmartphoneKey(char* sp_pub_key){
 	//base64_decode((char*)smartphone_public_key, string_array, sp_pub_key_length);
 	//Serial.println(F("Dealing with sp pub key"));
-	//int sp_pub_key_length = sp_pub_key.length();
 	int sp_pub_key_length = strlen(sp_pub_key);
-	//char string_array[46];
-	//sp_pub_key.toCharArray(string_array, sp_pub_key_length +1);
-	//int decodedLen = base64_dec_len(string_array, sp_pub_key_length);
 	int decodedLen = base64_dec_len(sp_pub_key, sp_pub_key_length);
 	char decoded[decodedLen];
 	base64_decode(decoded, sp_pub_key, sp_pub_key_length);
@@ -203,7 +199,6 @@ void dealWithData2() {
 			continue;
 
 		char single_char = char(altSerial.read());
-		//Serial.println(String("----> ") + int(single_char));
 		// check for new line or carriage return
 		if (single_char == '\n') 
 			break;
@@ -214,13 +209,9 @@ void dealWithData2() {
 
 	// null-terminate string
 	buffer[bufferIdx] = 0;
-		
-	//Serial.println(bufferIdx);
 	//String char_to_string = String(buffer);
-	//Serial.println(sizeof(buffer));
 	Serial.print(F("Recv: "));
 	Serial.println(buffer);
-	// Serial.println("---> ." + char_to_string.substring(0, bufferIdx)  + ".");
 	if (!received_smartphone_pub_key) {
 		received_smartphone_pub_key = true;
 		sendArduinoPubKey();
@@ -231,9 +222,8 @@ void dealWithData2() {
 		altSerial.flush();
 	}
 	else {
-		Serial.println(F("gttm"));
 		Serial.println(buffer);
-		Serial.println(F("gttm2"));
+		Serial.println(F("gttm"));
 	}
 
 }
