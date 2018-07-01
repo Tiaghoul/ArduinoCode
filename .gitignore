@@ -1,0 +1,10 @@
+
+arduinoController/\.vs/
+
+blenano_peripheral/\.vs/
+
+libraries/
+
+blenano_peripheral/CppProperties\.json
+
+arduinoController/CppProperties\.json
