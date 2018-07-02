@@ -5,14 +5,9 @@
 #define TXRX_BUF_LEN      30
 // Create ble instance
 BLE                       ble;
-// Create a timer task000
-Ticker                    ticker1s;
 
 const int pin_out = D13;
 char ok_string1[] = "ok1";
-char ok_string2[] = "ok2";
-char ok_string3[] = "ok3";
-char ok_string4[] = "ok4";
 
 bool received_android_key = false;
 bool received_first_half = false;
@@ -38,18 +33,6 @@ void blinky(void) {
   digitalWrite(pin_out, LOW);
   delay(100);
 }
-
-void longblinky(void) {
-  digitalWrite(pin_out, HIGH);
-  delay(700);
-  digitalWrite(pin_out, LOW);
-  delay(300);
-  digitalWrite(pin_out, HIGH);
-  delay(700);
-  digitalWrite(pin_out, LOW);
-  delay(300);
-}
-
 // The uuid of service and characteristics
 static const uint8_t service1_uuid[] = { 0x71, 0x3D, 0, 0, 0x50, 0x3E, 0x4C, 0x75, 0xBA, 0x94, 0x31, 0x48, 0xF1, 0x8D, 0x94, 0x1E };
 static const uint8_t service1_chars1_uuid[] = { 0x71, 0x3D, 0, 2, 0x50, 0x3E, 0x4C, 0x75, 0xBA, 0x94, 0x31, 0x48, 0xF1, 0x8D, 0x94, 0x1E };
@@ -148,10 +131,6 @@ void wait_for_arduino_ok(){
   int string_size = string_to_send.length();
   char* string2array = new char[string_size+1];
   string_to_send.toCharArray(string2array, string_size+1);
-//  String aux = full_encrypted_msg.substring(0,20);
-  full_encrypted_msg = "hihellomynameisjoe1234";
-//  por 1 delay de 1 segundo
-// por flush em todos os "Serial" (not altSerial) no arduino
   delay(40);
   Serial.println(full_encrypted_msg);
   Serial.flush();
@@ -223,15 +202,10 @@ void gattServerWriteCallBack(const GattWriteCallbackParams *Handler) {
       current_msg_part += 1;
       if(current_msg_part == number_of_msg_parts){
         received_encrypted_msg = true;
-//        Serial.println(full_encrypted_msg);
-//        full_encrypted_msg = "";
         wait_for_arduino_ok();
         return;
       }
     }
-  }
-  else{
-    Serial.println("naodeviachegaraqui");
   }
 }
 
