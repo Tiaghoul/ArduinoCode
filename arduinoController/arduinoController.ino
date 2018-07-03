@@ -43,13 +43,13 @@ void dealWithDisconnection(){
 void generateSharedSecret(){
 	Serial.println(F("Generating shared secret: "));
 	Curve25519::dh2(smartphone_public_key, arduino_secret_key);
-/*
+
 	for(uint8_t i = 0; i< 32; i++){
 		Serial.print(smartphone_public_key[i]);
 		Serial.print(F(", "));
 	}
 	Serial.println();
-*/
+
 }
 
 void generateECDHkeyValues(){
@@ -76,28 +76,25 @@ void sendArduinoPubKey(){
 // encodedLen+1 due to '\0' that base64_encode puts at the end 
 	char encoded[encodedLen+1];
 	base64_encode(encoded, to_base_64, 32);
-	//Serial.print(F("encoded addr:"));
-	//Serial.println((size_t)encoded, HEX);
 	altSerial.println(encoded);
 }
 
 void dealWithSmartphoneKey(char* sp_pub_key, uint8_t sp_pub_key_size){
-	// check if key size is 32, else "dealwithdisconnection"
 	Serial.println(F("Dealing with sp pub key"));
-
-	//int sp_pub_key_length = sizeof(sp_pub_key);
-	Serial.println(sp_pub_key);
-	Serial.println(F("~~~~~~~~"));
 	int decodedLen = base64_dec_len(sp_pub_key, sp_pub_key_size);
-	char decoded[decodedLen];
+	if(decodedLen != 32){
+		Serial.println(F("decLen not 32"));
+		dealWithDisconnection();
+	}
+// decodedLen+1 due to '\0' that base64_decode puts at the end 
+	char decoded[decodedLen+1];
 	base64_decode(decoded, sp_pub_key, sp_pub_key_size);
-	Serial.println(F("----"));
 	for(uint8_t kk = 0; kk < decodedLen; kk++){
 		smartphone_public_key[kk] = decoded[kk];
-		Serial.print(smartphone_public_key[kk]);
-		Serial.print(F(", "));
+		//Serial.print(smartphone_public_key[kk]);
+		//Serial.print(F(", "));
 	}
-	Serial.println();
+	//Serial.println();
 
 }
 
@@ -156,30 +153,22 @@ void dealWithData() {
 			continue;
 
 		char single_char = char(altSerial.read());
-		// check for new line or carriage return
+		// check for new line
 		if (single_char == '\n') 
 			break;
 		
 		buffer[bufferIdx] = single_char;
 		bufferIdx += 1;
 	}
-
+	
 	// null-terminate string
 	buffer[bufferIdx] = 0;
 	Serial.print(F("Recv: "));
 	Serial.println(buffer);
 	Serial.println(bufferIdx);
 	if (!received_smartphone_pub_key) {
-		Serial.print(F("R1: "));
-		Serial.println(buffer);
-		Serial.print(F("buffer addr:"));
-		Serial.println((size_t)buffer, HEX);
-
 		received_smartphone_pub_key = true;
 		sendArduinoPubKey();
-
-		Serial.print(F("R2: "));
-		Serial.println(buffer);
 		dealWithSmartphoneKey(&buffer[0], bufferIdx-1);
 		generateSharedSecret();
 		Serial.println(F("sending ok.."));
@@ -189,6 +178,9 @@ void dealWithData() {
 	else {
 		Serial.println(buffer);
 		Serial.println(F("gttm"));
+	}
+	while(altSerial.available() > 0){
+		altSerial.read();
 	}
 
 }
