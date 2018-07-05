@@ -18,7 +18,7 @@ const int pin_decline = 8;
 
 String smartphonesArray[2] = {"uXUi27eQpTCOaB8DfHgD", "randomkeyvalue"};
 bool received_smartphone_pub_key = false;
-bool received_encrypted_msg = false;
+//bool received_encrypted_msg = false;
 
 // ECDH arduino public and private keys, smartphone public key.
 // The smartphone public key array is later used to store the shared key
@@ -34,17 +34,17 @@ void blink(int pin_out) {
 
 void dealWithDisconnection(){
 	received_smartphone_pub_key = false;
-	received_encrypted_msg = false;
-	memset(arduino_secret_key, 0, sizeof(arduino_secret_key));
-	memset(arduino_public_key, 0, sizeof(arduino_public_key));
-	memset(smartphone_public_key, 0, sizeof(smartphone_public_key));
+	//received_encrypted_msg = false;
+	//memset(arduino_secret_key, 0, sizeof(arduino_secret_key));
+	//memset(arduino_public_key, 0, sizeof(arduino_public_key));
+	//memset(smartphone_public_key, 0, sizeof(smartphone_public_key));
 }
 
 void generateSharedSecret(){
-	Serial.println(F("Generating shared secret: "));
+	Serial.println(F("Generating shared secret."));
 	Curve25519::dh2(smartphone_public_key, arduino_secret_key);
 
-	for(uint8_t i = 0; i< 32; i++){
+	for(int i = 0; i< 32; i++){
 		Serial.print(smartphone_public_key[i]);
 		Serial.print(F(", "));
 	}
@@ -53,22 +53,14 @@ void generateSharedSecret(){
 }
 
 void generateECDHkeyValues(){
-	//Serial.print(F("ECDH: "));
+	Serial.println(F("Gen ECDH."));
 	Curve25519::dh1(arduino_public_key, arduino_secret_key);
-	Serial.println(F("done"));
-	/*	
-	for(int j = 0; j<32; j++){
-		Serial.print(arduino_public_key[j]);
-		Serial.print(F(", "));
-	}
-	Serial.println();
-	*/
 }
 
 void sendArduinoPubKey(){
-	Serial.println(F("Sending pub key.."));
+	Serial.println(F("Sending pub key."));
 	char to_base_64[32];
-	for(uint8_t i = 0; i<32; i++){
+	for(int i = 0; i<32; i++){
 		to_base_64[i] = char(arduino_public_key[i]);
 	}
 
@@ -79,8 +71,8 @@ void sendArduinoPubKey(){
 	altSerial.println(encoded);
 }
 
-void dealWithSmartphoneKey(char* sp_pub_key, uint8_t sp_pub_key_size){
-	Serial.println(F("Dealing with sp pub key"));
+void dealWithSmartphoneKey(char* sp_pub_key, int sp_pub_key_size){
+	Serial.println(F("Dealing with sp pub key."));
 	int decodedLen = base64_dec_len(sp_pub_key, sp_pub_key_size);
 	if(decodedLen != 32){
 		Serial.println(F("decLen not 32"));
@@ -89,7 +81,7 @@ void dealWithSmartphoneKey(char* sp_pub_key, uint8_t sp_pub_key_size){
 // decodedLen+1 due to '\0' that base64_decode puts at the end 
 	char decoded[decodedLen+1];
 	base64_decode(decoded, sp_pub_key, sp_pub_key_size);
-	for(uint8_t kk = 0; kk < decodedLen; kk++){
+	for(int kk = 0; kk < decodedLen; kk++){
 		smartphone_public_key[kk] = decoded[kk];
 		//Serial.print(smartphone_public_key[kk]);
 		//Serial.print(F(", "));
@@ -98,49 +90,33 @@ void dealWithSmartphoneKey(char* sp_pub_key, uint8_t sp_pub_key_size){
 
 }
 
-void dealWithEncryptedMsg(String enc_msg){
-	// do the decoding the same way as in "dealWithSmartphoneKey"
-
-	//Serial.print(F("Received encypted message: "));
-
+void dealWithEncryptedMsg(char* enc_msg, int enc_msg_size){
+	Serial.println(F("Decrypting message."));
 	uint8_t iv[12];
-	uint8_t encodedTextSize = enc_msg.length();
-	char encodedTextArray[100];
-	enc_msg.toCharArray(encodedTextArray, encodedTextSize+1);
-	uint8_t decodedLen = base64_dec_len(encodedTextArray, encodedTextSize);
-	char decoded[decodedLen];
-	base64_decode(decoded, encodedTextArray, encodedTextSize);
-	//Serial.println(decodedLen);
-	uint8_t cipheredTextValues[decodedLen-12];
-	//Serial.print(F("IV: "));
-	for(uint8_t j=0; j<12; j++){
+	int decodedLen = base64_dec_len(enc_msg, enc_msg_size);
+	char decoded[decodedLen+1];
+	base64_decode(decoded, enc_msg, enc_msg_size);
+	for(int j=0; j<12; j++){
 		iv[j] = decoded[j];
-		//Serial.print(iv[j]);
-		//Serial.print(F(", "));
 	}
-	//Serial.println();
-	//Serial.println(F("CIPHERED TEXT: "));
+	/*
+	uint8_t cipheredTextValues[decodedLen-12];
 	for(uint8_t k = 12; k < decodedLen; k++){
 		cipheredTextValues[k-12] = decoded[k];
-		//Serial.print(cipheredTextValues[k-12]);
-		//Serial.print(", ");
 	}
-	//Serial.println();
+	*/
 	uint8_t outputBuffer[20];
 	GCM<AES256> gcm;
-	gcm.setKey(smartphone_public_key, sizeof(smartphone_public_key));
-	gcm.setIV(iv, sizeof(iv));
-	// technically don't need to use any intermediate memory and can just do:
-	// gcm.setIV(decoded, 12);
-	gcm.decrypt(outputBuffer, cipheredTextValues, decodedLen);
-	// one of these also works:
-	// gcm.decrypt(outputBuffer, decoded + 12, decodedLen);
-	// gcm.decrypt(outputBuffer, &decoded[12], decodedLen);
-	for(uint8_t k = 0; k<sizeof(outputBuffer); k++){
-		//Serial.print(char(outputBuffer[k]));
+	gcm.setKey(smartphone_public_key, 32);
+	gcm.setIV(iv, 12);
+	//gcm.decrypt(outputBuffer, cipheredTextValues, decodedLen-12);
+	gcm.decrypt(outputBuffer, &decoded[12], decodedLen);
+	for(int k = 0; k < 20; k++){
+		Serial.print(char(outputBuffer[k]));
 	}
-	//Serial.println();
-	//dealWithDisconnection();
+	Serial.println();
+	dealWithDisconnection();
+	generateECDHkeyValues();
 }
 
 
@@ -176,8 +152,8 @@ void dealWithData() {
 		altSerial.flush();
 	}
 	else {
-		Serial.println(buffer);
-		Serial.println(F("gttm"));
+		Serial.println(F("here"));
+		dealWithEncryptedMsg(&buffer[0], bufferIdx-1);
 	}
 	while(altSerial.available() > 0){
 		altSerial.read();
