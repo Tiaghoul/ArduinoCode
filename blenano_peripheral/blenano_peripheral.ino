@@ -9,30 +9,21 @@ BLE                       ble;
 const int pin_out = D13;
 char ok_string1[] = "ok1";
 
+// smartphone key variables
 bool received_android_key = false;
 bool received_first_half = false;
-bool received_arduino_key = false;
 uint8_t number_of_key_parts = 0;
 uint8_t current_key_part = 0;
 String full_android_key = "";
+// arduino key variable
 String full_arduino_key = "";
-
+// encrypted message variables
+bool received_encrypted_msg = false;
+bool received_first_part_msg = false;
 uint8_t number_of_msg_parts = 0;
 uint8_t current_msg_part = 0;
 String full_encrypted_msg = "";
-bool received_encrypted_msg = false;
-bool received_first_part_msg = false;
 
-void blinky(void) {
-  digitalWrite(pin_out, HIGH);
-  delay(250);
-  digitalWrite(pin_out, LOW);
-  delay(100);
-  digitalWrite(pin_out, HIGH);
-  delay(250);
-  digitalWrite(pin_out, LOW);
-  delay(100);
-}
 // The uuid of service and characteristics
 static const uint8_t service1_uuid[] = { 0x71, 0x3D, 0, 0, 0x50, 0x3E, 0x4C, 0x75, 0xBA, 0x94, 0x31, 0x48, 0xF1, 0x8D, 0x94, 0x1E };
 static const uint8_t service1_chars1_uuid[] = { 0x71, 0x3D, 0, 2, 0x50, 0x3E, 0x4C, 0x75, 0xBA, 0x94, 0x31, 0x48, 0xF1, 0x8D, 0x94, 0x1E };
@@ -55,7 +46,6 @@ GattService         customService(service1_uuid, customServChars, sizeof(customS
 //DeviceInformationService *deviceInfo;
 
 void dealWithDisconnection(){
-  received_arduino_key = false;
   received_android_key = false;
   received_first_half = false;
   received_encrypted_msg = false;
@@ -74,12 +64,11 @@ void dealWithDisconnection(){
 }
 
 
-// Waiting to receive public key from arduino,
-// and send it to smartphone
+// Waiting to receive public key from arduino, and send it to smartphone
 void wait_for_arduino_key(){
-  int n_tries = 20;
+  int n_tries = 30;
   while(!Serial.available()){
-    delay(700);
+    delay(200);
     n_tries -= 1;
     if(n_tries == 0){
       char coise[] = "failed1";
@@ -90,13 +79,12 @@ void wait_for_arduino_key(){
   while (Serial.available() > 0) {
     char char_received = Serial.read();
     if (char_received == '\n') {
-      received_arduino_key = true;
       for(uint8_t i=0; i<2; i++){
         String i_part = full_arduino_key.substring(20*i, 20*(i+1));
         char* to_send = new char[21];
         i_part.toCharArray(to_send, 21);
         ble.updateCharacteristicValue(characteristic3.getValueAttribute().getHandle(), (uint8_t *)to_send, 20);
-        delay(75); 
+        delay(75);
       }
       uint8_t string_size = full_arduino_key.length();
       String third_half = full_arduino_key.substring(40, string_size);
@@ -113,9 +101,9 @@ void wait_for_arduino_key(){
 
 //Waiting to receive an "ok" from the Arduino, in order to send the encrypted text from the smartphone
 void wait_for_arduino_ok(){
-  int n_tries = 20;
+  int n_tries = 50;
   while(!Serial.available()){
-    delay(500);
+    delay(200);
     n_tries -= 1;
     if(n_tries == 0){
       ble.updateCharacteristicValue(characteristic3.getValueAttribute().getHandle(), (uint8_t *)&ok_string1, sizeof(ok_string1));
@@ -131,29 +119,15 @@ void wait_for_arduino_ok(){
   int string_size = string_to_send.length();
   char* string2array = new char[string_size+1];
   string_to_send.toCharArray(string2array, string_size+1);
-  delay(40);
   Serial.println(full_encrypted_msg);
   Serial.flush();
-  delay(400);
   dealWithDisconnection();
-  delay(400);
   ble.updateCharacteristicValue(characteristic3.getValueAttribute().getHandle(), (uint8_t *)string2array, string_size);
 }
 
 void disconnectionCallBack(const Gap::DisconnectionCallbackParams_t *params) {
 //  Serial.println("Restart advertising ");
-  while (Serial.available() > 0) {
-    char char_received = Serial.read();
-  }
-  received_arduino_key = false;
-  received_android_key = false;
-  received_first_half = false;
-  received_encrypted_msg = false;
-  received_first_part_msg = false;
-  number_of_key_parts = 0;
-  number_of_msg_parts = 0;
-  current_key_part = 0;
-  current_msg_part = 0;
+  dealWithDisconnection();
   ble.startAdvertising();
 }
 
