@@ -73,6 +73,7 @@ void wait_for_arduino_key(){
     if(n_tries == 0){
       char coise[] = "failed1";
       ble.updateCharacteristicValue(characteristic3.getValueAttribute().getHandle(), (uint8_t *)&coise, sizeof(coise));
+      dealWithDisconnection();
       return;
     }
   }
@@ -121,14 +122,14 @@ void wait_for_arduino_ok(){
   string_to_send.toCharArray(string2array, string_size+1);
   Serial.println(full_encrypted_msg);
   Serial.flush();
-  dealWithDisconnection();
   ble.updateCharacteristicValue(characteristic3.getValueAttribute().getHandle(), (uint8_t *)string2array, string_size);
+  dealWithDisconnection();
 }
 
 void disconnectionCallBack(const Gap::DisconnectionCallbackParams_t *params) {
 //  Serial.println("Restart advertising ");
   dealWithDisconnection();
-  ble.startAdvertising();
+//  ble.startAdvertising();
 }
 
 
