@@ -14,11 +14,9 @@
 // used to assume size of internal buffers
 AltSoftSerial altSerial;
 const int pin_accept = 13;
-const int pin_decline = 8;
-
-String smartphonesArray[2] = {"uXUi27eQpTCOaB8DfHgD", "randomkeyvalue"};
+const int pin_decline = 11;
+char *smartphoneIDsArray[2] = {"uXUi27eQpTCOaB8DfHgD", "randomkeyvalue"};
 bool received_smartphone_pub_key = false;
-//bool received_encrypted_msg = false;
 
 // ECDH arduino public and private keys, smartphone public key.
 // The smartphone public key array is later used to store the shared key
@@ -34,10 +32,6 @@ void blink(int pin_out) {
 
 void dealWithDisconnection(){
 	received_smartphone_pub_key = false;
-	//received_encrypted_msg = false;
-	//memset(arduino_secret_key, 0, sizeof(arduino_secret_key));
-	//memset(arduino_public_key, 0, sizeof(arduino_public_key));
-	//memset(smartphone_public_key, 0, sizeof(smartphone_public_key));
 }
 
 void generateSharedSecret(){
@@ -49,7 +43,6 @@ void generateSharedSecret(){
 		Serial.print(F(", "));
 	}
 	Serial.println();
-
 }
 
 void generateECDHkeyValues(){
@@ -71,23 +64,19 @@ void sendArduinoPubKey(){
 	altSerial.println(encoded);
 }
 
-void dealWithSmartphoneKey(char* sp_pub_key, int sp_pub_key_size){
+int dealWithSmartphoneKey(char* sp_pub_key, int sp_pub_key_size){
 	Serial.println(F("Dealing with sp pub key."));
 	int decodedLen = base64_dec_len(sp_pub_key, sp_pub_key_size);
 	if(decodedLen != 32){
-		Serial.println(F("decLen not 32"));
-		dealWithDisconnection();
+		return -1;
 	}
 // decodedLen+1 due to '\0' that base64_decode puts at the end 
 	char decoded[decodedLen+1];
 	base64_decode(decoded, sp_pub_key, sp_pub_key_size);
 	for(int kk = 0; kk < decodedLen; kk++){
 		smartphone_public_key[kk] = decoded[kk];
-		//Serial.print(smartphone_public_key[kk]);
-		//Serial.print(F(", "));
 	}
-	//Serial.println();
-
+	return 0;
 }
 
 void dealWithEncryptedMsg(char* enc_msg, int enc_msg_size){
@@ -99,22 +88,27 @@ void dealWithEncryptedMsg(char* enc_msg, int enc_msg_size){
 	for(int j=0; j<12; j++){
 		iv[j] = decoded[j];
 	}
-	/*
-	uint8_t cipheredTextValues[decodedLen-12];
-	for(uint8_t k = 12; k < decodedLen; k++){
-		cipheredTextValues[k-12] = decoded[k];
-	}
-	*/
 	uint8_t outputBuffer[20];
 	GCM<AES256> gcm;
 	gcm.setKey(smartphone_public_key, 32);
 	gcm.setIV(iv, 12);
-	//gcm.decrypt(outputBuffer, cipheredTextValues, decodedLen-12);
 	gcm.decrypt(outputBuffer, &decoded[12], decodedLen);
-	for(int k = 0; k < 20; k++){
-		Serial.print(char(outputBuffer[k]));
+	char * int_to_char = (char *) outputBuffer;
+// null-terminate string
+	int_to_char[20] = 0;
+	Serial.println(int_to_char);
+	bool found_match = false;
+	for(int i = 0; i < 2; i++){
+		if(strcmp(int_to_char,smartphoneIDsArray[i]) == 0){
+			Serial.println(F("found match!"));
+			found_match = true;
+			blink(pin_accept);
+			break;
+		}
 	}
-	Serial.println();
+	if(!found_match){
+		blink(pin_decline);
+	}
 	dealWithDisconnection();
 	generateECDHkeyValues();
 }
@@ -123,7 +117,6 @@ void dealWithEncryptedMsg(char* enc_msg, int enc_msg_size){
 void dealWithData() {
 	char buffer[MAX_MSG_LEN];
 	int bufferIdx = 0;
-	// limpar o serial a seguir ao "break"
 	while (true) {
 		if (!altSerial.available())
 			continue;
@@ -143,16 +136,20 @@ void dealWithData() {
 	Serial.println(buffer);
 	Serial.println(bufferIdx);
 	if (!received_smartphone_pub_key) {
+		int return_value = dealWithSmartphoneKey(&buffer[0], bufferIdx-1);
+		if(return_value == -1){
+			Serial.println(F("unvalid key len.."));
+			dealWithDisconnection();
+			return;
+		}
 		received_smartphone_pub_key = true;
 		sendArduinoPubKey();
-		dealWithSmartphoneKey(&buffer[0], bufferIdx-1);
 		generateSharedSecret();
 		Serial.println(F("sending ok.."));
 		altSerial.println(F("okayy"));
 		altSerial.flush();
 	}
 	else {
-		Serial.println(F("here"));
 		dealWithEncryptedMsg(&buffer[0], bufferIdx-1);
 	}
 	while(altSerial.available() > 0){
@@ -168,7 +165,7 @@ void setup() {
 
 	while (!Serial) {;}
 	Serial.println(F("hi"));
-	
+ 
 	generateECDHkeyValues();
 	altSerial.begin(9600);
 }
