@@ -4,7 +4,7 @@
 
 SoftwareSerial mySerial(10, 11); // RX, TX
 const int pin_accept = 13;
-const int pin_decline = 8;
+//const int pin_decline = 8;
 
 String smartphonesArray[2] = {"uXUi27eQpTCOaB8DfHgD", "deeznuts"};
 String string_received = "";
@@ -105,10 +105,10 @@ void generateKeyValues() {
 
 void dealWithSmartphoneKey(String spKey) {
   Serial.println();
-  Serial.println("---> dealing with smartphone key");
+  Serial.println(F("---> dealing with smartphone key"));
   uint32_t smartPhoneKey = spKey.substring(0, spKey.length() - 1).toInt();
   if (smartPhoneKey == 0) {
-    Serial.println("it's 0, returning now");
+    Serial.println(F("it's 0, returning now"));
     received_public = false;
     mySerial.println("fail1");
     return;
@@ -120,7 +120,7 @@ void dealWithSmartphoneKey(String spKey) {
   mySerial.println(String(A));
   k = pow_mod(smartPhoneKey, a, prime);
   key_string = String(k);
-  Serial.print("shared key = ");
+  Serial.print(F("shared key = "));
   Serial.println(key_string);
   generateKeyValues();
 }
@@ -128,7 +128,8 @@ void dealWithSmartphoneKey(String spKey) {
 void xorDecrypt(String encryptedMessage) {
   two_halfs = 0;
   Serial.println();
-  Serial.println("---> xoring and decripting: " + encryptedMessage);
+  Serial.print(F("---> xoring and decripting: "));
+  Serial.println(encryptedMessage);
 
   
   int input2len = encryptedMessage.length();
@@ -137,7 +138,7 @@ void xorDecrypt(String encryptedMessage) {
   int decodedlen = base64_dec_len(string_array, input2len);
   char decoded[decodedlen];
   base64_decode(decoded, string_array, input2len);
-  Serial.println(decoded);
+//  Serial.println(decoded);
 
   String decryptedMessage = "";
   for (uint8_t i = 0; i < decodedlen; i++) {
@@ -145,20 +146,20 @@ void xorDecrypt(String encryptedMessage) {
     decryptedMessage += char(decoded[i] ^ key_string.charAt(i % key_string.length()));
   }
   decryptedMessage = decryptedMessage.substring(0, decryptedMessage.length() - 1);
-  Serial.print("decripted message : ");
+  Serial.print(F("decripted message : "));
   Serial.println(decryptedMessage);
   for (uint8_t i = 0; i < sizeof(smartphonesArray) / sizeof(String); i++) {
     if (smartphonesArray[i].equals(decryptedMessage)){
-      Serial.println("SUCCESSSSSS");
+      Serial.println(F("SUCCESSSSSS"));
       mySerial.println("success");
       blink(pin_accept);
       return;
     }
   }
 
-  Serial.println("none of the IDs were right...");
+  Serial.println(F("none of the IDs were right..."));
   mySerial.println("fail2");
-  blink(pin_decline);
+//  blink(pin_decline);
 }
 
 void dealWithData() {
@@ -195,13 +196,13 @@ void dealWithData() {
 
 void setup() {
   Serial.begin(57600);
-  pinMode(pin_accept, OUTPUT);
-  pinMode(pin_decline, OUTPUT);
+//  pinMode(pin_accept, OUTPUT);
+//  pinMode(pin_decline, OUTPUT);
 
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-  Serial.println("START");
+  Serial.println(F("START"));
   
   generateKeyValues();
 
