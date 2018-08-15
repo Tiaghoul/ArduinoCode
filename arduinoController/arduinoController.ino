@@ -135,6 +135,17 @@ void dealWithData() {
 	Serial.print(F("Recv: "));
 	Serial.println(buffer);
 	Serial.println(bufferIdx);
+	// check if bufferidx < 43
+	// every data received must be at least 44/45 chars long
+	if(bufferIdx < 43){
+		Serial.println(F("short string.."));
+	//if it already had sent its public key, generate a new key pair
+		if(received_smartphone_pub_key){
+			generateECDHkeyValues();
+			dealWithDisconnection();
+		}
+		return;
+	}
 	if (!received_smartphone_pub_key) {
 		int return_value = dealWithSmartphoneKey(&buffer[0], bufferIdx-1);
 		if(return_value == -1){
