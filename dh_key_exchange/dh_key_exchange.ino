@@ -6,7 +6,7 @@ SoftwareSerial mySerial(10, 11); // RX, TX
 const int pin_accept = 13;
 //const int pin_decline = 8;
 
-String smartphonesArray[2] = {"uXUi27eQpTCOaB8DfHgD", "deeznuts"};
+String smartphonesArray[2] = {"uXUi27eQpTCOaB8DfHgD", "othervalue"};
 String string_received = "";
 String string_open = "open";
 bool can_read = true;
