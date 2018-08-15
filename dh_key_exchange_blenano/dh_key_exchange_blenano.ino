@@ -23,17 +23,6 @@ void blinky(void) {
   delay(100);
 }
 
-void longblinky(void) {
-  digitalWrite(pin_out, HIGH);
-  delay(700);
-  digitalWrite(pin_out, LOW);
-  delay(300);
-  digitalWrite(pin_out, HIGH);
-  delay(700);
-  digitalWrite(pin_out, LOW);
-  delay(300);
-}
-
 // The uuid of service and characteristics
 static const uint8_t service1_uuid[] = { 0x71, 0x3D, 0, 0, 0x50, 0x3E, 0x4C, 0x75, 0xBA, 0x94, 0x31, 0x48, 0xF1, 0x8D, 0x94, 0x1E };
 static const uint8_t service1_chars1_uuid[] = { 0x71, 0x3D, 0, 2, 0x50, 0x3E, 0x4C, 0x75, 0xBA, 0x94, 0x31, 0x48, 0xF1, 0x8D, 0x94, 0x1E };
@@ -53,7 +42,6 @@ GattCharacteristic *customServChars[] = { &characteristic1, &characteristic2, &c
 //Create service
 GattService         customService(service1_uuid, customServChars, sizeof(customServChars) / sizeof(GattCharacteristic *));
 
-//DeviceInformationService *deviceInfo;
 
 void disconnectionCallBack(const Gap::DisconnectionCallbackParams_t *params) {
   //Serial.println("Restart advertising ");
@@ -67,14 +55,7 @@ void disconnectionCallBack(const Gap::DisconnectionCallbackParams_t *params) {
 }
 
 
-void connectionCallBack(const Gap::ConnectionCallbackParams_t *params) {
-  /*for(index=5; index > 0; index--) {
-  Serial.print(params->ownAddr[index], HEX);
-  Serial.print(" ");
-  }
-  Serial.print(params->ownAddr[0], HEX);
-  Serial.println(" ");*/
-}
+void connectionCallBack(const Gap::ConnectionCallbackParams_t *params) {}
 
 
 void gattServerWriteCallBack(const GattWriteCallbackParams *Handler) {
@@ -99,7 +80,8 @@ void gattServerWriteCallBack(const GattWriteCallbackParams *Handler) {
   
   int n_tries = 20;
   while (!Serial.available()) {
-    blinky();
+//    blinky();
+    delay(300);
     n_tries -= 1;
     if (n_tries == 0) {
       char coise[] = "failed1";
@@ -131,7 +113,7 @@ void gattServerWriteCallBack(const GattWriteCallbackParams *Handler) {
 void setAdvertisement(void) {
   ble.accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
   // Add short name to advertisement
-  ble.accumulateAdvertisingPayload(GapAdvertisingData::SHORTENED_LOCAL_NAME, (const uint8_t *)"TXRX", 4);
+  ble.accumulateAdvertisingPayload(GapAdvertisingData::SHORTENED_LOCAL_NAME, (const uint8_t *)"BLUE", 4);
   // Add complete 128bit_uuid to advertisement
   ble.accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_128BIT_SERVICE_IDS, (const uint8_t *)uart_base_uuid_rev, sizeof(uart_base_uuid_rev));
   // Add complete device name to scan response data
