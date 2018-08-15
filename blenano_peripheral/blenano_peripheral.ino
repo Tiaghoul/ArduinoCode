@@ -7,7 +7,6 @@
 BLE                       ble;
 
 const int pin_out = D13;
-char ok_string1[] = "ok1";
 
 // smartphone key variables
 bool received_android_key = false;
@@ -66,13 +65,13 @@ void dealWithDisconnection(){
 
 // Waiting to receive public key from arduino, and send it to smartphone
 void wait_for_arduino_key(){
-  int n_tries = 30;
+  int n_tries = 20;
   while(!Serial.available()){
-    delay(200);
+    delay(100);
     n_tries -= 1;
     if(n_tries == 0){
-      char coise[] = "failed1";
-      ble.updateCharacteristicValue(characteristic3.getValueAttribute().getHandle(), (uint8_t *)&coise, sizeof(coise));
+      char fail[] = "fail1";
+      ble.updateCharacteristicValue(characteristic3.getValueAttribute().getHandle(), (uint8_t *)&fail, sizeof(fail));
       dealWithDisconnection();
       return;
     }
@@ -102,12 +101,13 @@ void wait_for_arduino_key(){
 
 //Waiting to receive an "ok" from the Arduino, in order to send the encrypted text from the smartphone
 void wait_for_arduino_ok(){
-  int n_tries = 50;
+  int n_tries = 100;
   while(!Serial.available()){
-    delay(200);
+    delay(100);
     n_tries -= 1;
     if(n_tries == 0){
-      ble.updateCharacteristicValue(characteristic3.getValueAttribute().getHandle(), (uint8_t *)&ok_string1, sizeof(ok_string1));
+      char fail[] = "fail2";
+      ble.updateCharacteristicValue(characteristic3.getValueAttribute().getHandle(), (uint8_t *)&fail, sizeof(fail));
       dealWithDisconnection();
       return;
     }
@@ -127,7 +127,6 @@ void wait_for_arduino_ok(){
 }
 
 void disconnectionCallBack(const Gap::DisconnectionCallbackParams_t *params) {
-//  Serial.println("Restart advertising ");
   dealWithDisconnection();
 //  ble.startAdvertising();
 }
@@ -197,7 +196,8 @@ void setAdvertisement(void) {
 
 void setup() {
   Serial.begin(9600);
-  //Serial.println(DEVICE_NAME);
+  while (!Serial) {;}
+//  Serial.println(DEVICE_NAME);
   pinMode(pin_out, OUTPUT);
 
   // Init ble
