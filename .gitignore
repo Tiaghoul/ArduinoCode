@@ -8,3 +8,5 @@ libraries/
 blenano_peripheral/CppProperties\.json
 
 arduinoController/CppProperties\.json
+
+BLE_HRM_testing/BLE_HRM_testing\.ino
