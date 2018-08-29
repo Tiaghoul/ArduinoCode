@@ -13,8 +13,8 @@
 // no message sent to the arduino can ever have more than this many bytes
 // used to assume size of internal buffers
 AltSoftSerial altSerial;
-const int pin_accept = 13;
-const int pin_decline = 11;
+const int pin_accept = 7;
+const int pin_decline = 2;
 char *smartphoneIDsArray[2] = {"uXUi27eQpTCOaB8DfHgD", "randomkeyvalue"};
 bool received_smartphone_pub_key = false;
 
@@ -26,7 +26,7 @@ uint8_t smartphone_public_key[32];
 
 void blink(int pin_out) {
 	digitalWrite(pin_out, HIGH);
-	delay(1000);
+	delay(500);
 	digitalWrite(pin_out, LOW);
 }
 
@@ -100,9 +100,9 @@ void dealWithEncryptedMsg(char* enc_msg, int enc_msg_size){
 	bool found_match = false;
 	for(int i = 0; i < 2; i++){
 		if(strcmp(int_to_char,smartphoneIDsArray[i]) == 0){
-			Serial.println(F("found match!"));
+//			Serial.println(F("found match!"));
 			found_match = true;
-			blink(pin_accept);
+			blink(pin_accept);  
 			break;
 		}
 	}
